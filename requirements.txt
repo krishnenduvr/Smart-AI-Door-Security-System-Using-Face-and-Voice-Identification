@@ -1,0 +1,12 @@
+streamlit
+numpy
+librosa
+sounddevice
+scipy
+facenet-pytorch
+scikit-learn
+gtts
+opencv-python-headless   # safer for cloud
+torch
+torchvision
+tensorflow
