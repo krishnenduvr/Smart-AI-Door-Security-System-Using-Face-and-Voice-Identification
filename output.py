@@ -329,8 +329,6 @@ def about_page():
     - Real-time decision making
     - Modern UI dashboard
     """)
-
-# ---------------- ACCESS PAGE ----------------
 def access_page():
     st.markdown("## 🔓 Access Control Panel")
 
@@ -347,6 +345,45 @@ def access_page():
             st.session_state[k] = v
 
     col1, col2 = st.columns(2)
+
+    # ---------------- FACE AUTH ----------------
+    with col1:
+        st.subheader("👤 Face Authentication")
+        img = st.camera_input("📸 Capture Face")
+        if img is not None:
+            st.image(img)
+            with open("captured_face.png", "wb") as f:
+                f.write(img.getbuffer())
+            st.session_state.face_user = "DetectedUser"
+            st.info(f"Face: {st.session_state.face_user}")
+
+    # ---------------- VOICE AUTH ----------------
+    with col2:
+        st.subheader("🎙 Voice Authentication")
+        uploaded_audio = st.file_uploader("🎧 Upload Voice Sample", type=["wav", "mp3"])
+        if uploaded_audio is not None:
+            with open("temp_voice.wav", "wb") as f:
+                f.write(uploaded_audio.read())
+            st.session_state.voice_user = "DetectedUser"
+            st.session_state.voice_conf = 0.95
+            st.info(f"Voice: {st.session_state.voice_user} ({st.session_state.voice_conf:.2f})")
+# ---------------- ACCESS PAGE ----------------
+# def access_page():
+#     st.markdown("## 🔓 Access Control Panel")
+
+#     # ---------------- INITIALIZE SESSION STATE ----------------
+#     defaults = {
+#         "face_user": "Unknown",
+#         "voice_user": "Unknown",
+#         "voice_conf": 0.0,
+#         "access_log": []   # 👈 stores people + time
+#     }
+
+#     for k, v in defaults.items():
+#         if k not in st.session_state:
+#             st.session_state[k] = v
+
+#     col1, col2 = st.columns(2)
 
     # ---------------- FACE AUTH ----------------
     # with col1:
@@ -368,29 +405,7 @@ def access_page():
     #         st.session_state.voice_user = voice_user
     #         st.session_state.voice_conf = conf
     #         st.info(f"Voice: {voice_user} ({conf:.2f})")
-     with col1:
-        st.subheader("👤 Face Authentication")
-        img = st.camera_input("📸 Capture Face")
-        if img is not None:
-            st.image(img)
-            with open("captured_face.png", "wb") as f:
-                f.write(img.getbuffer())
-            st.session_state.face_user = "DetectedUser"
-            st.info(f"Face: {st.session_state.face_user}")
-
-    # ---------------- VOICE AUTH ----------------
-    with col2:
-        st.subheader("🎙 Voice Authentication")
-        uploaded_audio = st.file_uploader("🎧 Upload Voice Sample", type=["wav", "mp3"])
-        if uploaded_audio is not None:
-            with open("temp_voice.wav", "wb") as f:
-                f.write(uploaded_audio.read())
-            st.session_state.voice_user = "DetectedUser"
-            st.session_state.voice_conf = 0.95
-            st.info(f"Voice: {st.session_state.voice_user} ({st.session_state.voice_conf:.2f})")
-
-
-
+     
 
     # ---------------- PIN ----------------
     st.subheader("🔢 PIN Verification")
@@ -465,6 +480,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
