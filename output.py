@@ -20,11 +20,7 @@ st.set_page_config(
     layout="wide"
 )
 # ---------------- PATHS ----------------
-# FACE_DB = r"D:\Security System\cropped_captured"
-FACE_DB = "cropped_captured"
-os.makedirs(FACE_DB, exist_ok=True)
-
-
+FACE_DB = r"D:\Security System\cropped_captured"
 VOICE_MODEL_PATH = "voice_model.pkl"
 VOICE_LABEL_PATH = "voice_labels.pkl"
 
@@ -427,5 +423,6 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
