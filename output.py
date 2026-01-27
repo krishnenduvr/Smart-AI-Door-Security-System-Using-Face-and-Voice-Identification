@@ -349,23 +349,56 @@ def access_page():
     col1, col2 = st.columns(2)
 
     # ---------------- FACE AUTH ----------------
-    with col1:
+    # with col1:
+    #     st.subheader("👤 Face Authentication")
+    #     if st.button("📸 Capture Face"):
+    #         face_user, frame = recognize_face()
+    #         st.session_state.face_user = face_user
+    #         if frame is not None:
+    #             st.image(frame, channels="BGR")
+    #         st.info(f"Face: {face_user}")
+
+
+
+     with col1:
         st.subheader("👤 Face Authentication")
-        if st.button("📸 Capture Face"):
-            face_user, frame = recognize_face()
-            st.session_state.face_user = face_user
-            if frame is not None:
-                st.image(frame, channels="BGR")
-            st.info(f"Face: {face_user}")
+        img = st.camera_input("📸 Capture Face")
+        if img is not None:
+            st.image(img)
+            # Save captured image
+            with open("captured_face.png", "wb") as f:
+                f.write(img.getbuffer())
+            # 👉 Replace with your face recognition model
+            st.session_state.face_user = "DetectedUser"  
+            st.info(f"Face: {st.session_state.face_user}")
+
 
     # ---------------- VOICE AUTH ----------------
+    # with col2:
+    #     st.subheader("🎙 Voice Authentication")
+    #     if st.button("🎧 Record Voice"):
+    #         voice_user, conf = recognize_voice()
+    #         st.session_state.voice_user = voice_user
+    #         st.session_state.voice_conf = conf
+    #         st.info(f"Voice: {voice_user} ({conf:.2f})")
     with col2:
         st.subheader("🎙 Voice Authentication")
-        if st.button("🎧 Record Voice"):
-            voice_user, conf = recognize_voice()
-            st.session_state.voice_user = voice_user
-            st.session_state.voice_conf = conf
-            st.info(f"Voice: {voice_user} ({conf:.2f})")
+        uploaded_audio = st.file_uploader("🎧 Upload Voice Sample", type=["wav", "mp3"])
+        if uploaded_audio is not None:
+            with open("temp_voice.wav", "wb") as f:
+                f.write(uploaded_audio.read())
+            # 👉 Replace with your voice recognition model
+            st.session_state.voice_user = "DetectedUser"
+            st.session_state.voice_conf = 0.95
+            st.info(f"Voice: {st.session_state.voice_user} ({st.session_state.voice_conf:.2f})")
+
+
+
+
+
+
+
+
 
     # ---------------- PIN ----------------
     st.subheader("🔢 PIN Verification")
@@ -440,6 +473,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
