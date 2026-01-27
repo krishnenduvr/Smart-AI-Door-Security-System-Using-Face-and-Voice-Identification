@@ -134,10 +134,10 @@ def recognize_face():
 
     # Convert to RGB tensor for MTCNN
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    rgb_tensor = torch.tensor(rgb).permute(2, 0, 1).float() / 255.0
+    # rgb_tensor = torch.tensor(rgb).permute(2, 0, 1).float() / 255.0
 
     # Detect face
-    face = mtcnn(rgb_tensor)
+    face = mtcnn(rgb)
     if face is None:
         return "Unknown", frame
 
@@ -472,6 +472,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
