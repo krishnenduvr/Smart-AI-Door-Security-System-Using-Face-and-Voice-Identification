@@ -121,27 +121,27 @@ face_db = load_face_db()
 
 #     return best_match if best_score >= FACE_THRESHOLD else "Unknown", frame
 
-
 def recognize_face():
-    # Use browser webcam snapshot
+    # Browser webcam snapshot
     img_file = st.camera_input("📷 Capture your face")
     if img_file is None:
         return "Unknown", None
 
-    # Convert uploaded image to OpenCV frame
+    # Convert to OpenCV frame
     bytes_data = img_file.getvalue()
     np_arr = np.frombuffer(bytes_data, np.uint8)
     frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-    # Convert to RGB for MTCNN
+    # Convert to RGB tensor for MTCNN
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    rgb_tensor = torch.tensor(rgb).permute(2, 0, 1).float() / 255.0
 
-    # Detect face with MTCNN
-    face = mtcnn(rgb)
+    # Detect face
+    face = mtcnn(rgb_tensor)
     if face is None:
         return "Unknown", frame
 
-    # Generate embedding with FaceNet
+    # Generate embedding
     emb = facenet(face.unsqueeze(0)).detach().numpy()
 
     # Compare with database
@@ -472,6 +472,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
