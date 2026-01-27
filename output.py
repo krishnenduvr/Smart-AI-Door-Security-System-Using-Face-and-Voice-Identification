@@ -94,25 +94,57 @@ def load_face_db():
 face_db = load_face_db()
 
 # ---------------- FACE RECOGNITION ----------------
+# def recognize_face():
+#     cam = cv2.VideoCapture(0)
+#     if not cam.isOpened():
+#         return "Unknown", None
+
+#     ret, frame = cam.read()
+#     cam.release()
+
+#     if not ret or frame is None:
+#         return "Unknown", None
+
+#     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#     face = mtcnn(rgb)
+
+#     if face is None:
+#         return "Unknown", frame
+
+#     emb = facenet(face.unsqueeze(0)).detach().numpy()
+
+#     best_match, best_score = "Unknown", 0
+#     for name, db_emb in face_db.items():
+#         score = cosine_similarity(emb, db_emb.reshape(1, -1))[0][0]
+#         if score > best_score:
+#             best_score, best_match = score, name
+
+#     return best_match if best_score >= FACE_THRESHOLD else "Unknown", frame
+
+
 def recognize_face():
-    cam = cv2.VideoCapture(0)
-    if not cam.isOpened():
+    # Use browser webcam snapshot
+    img_file = st.camera_input("📷 Capture your face")
+    if img_file is None:
         return "Unknown", None
 
-    ret, frame = cam.read()
-    cam.release()
+    # Convert uploaded image to OpenCV frame
+    bytes_data = img_file.getvalue()
+    np_arr = np.frombuffer(bytes_data, np.uint8)
+    frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-    if not ret or frame is None:
-        return "Unknown", None
-
+    # Convert to RGB for MTCNN
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    face = mtcnn(rgb)
 
+    # Detect face with MTCNN
+    face = mtcnn(rgb)
     if face is None:
         return "Unknown", frame
 
+    # Generate embedding with FaceNet
     emb = facenet(face.unsqueeze(0)).detach().numpy()
 
+    # Compare with database
     best_match, best_score = "Unknown", 0
     for name, db_emb in face_db.items():
         score = cosine_similarity(emb, db_emb.reshape(1, -1))[0][0]
@@ -440,5 +472,6 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
