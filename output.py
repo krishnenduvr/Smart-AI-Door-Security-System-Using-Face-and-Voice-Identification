@@ -329,11 +329,10 @@ def about_page():
     - Real-time decision making
     - Modern UI dashboard
     """)
-# ---------------- ACCESS PAGE ----------------
 def access_page():
     st.markdown("## 🔓 Access Control Panel")
 
-    # ---------------- SESSION STATE ----------------
+    # ---------- SESSION STATE ----------
     defaults = {
         "face_user": "Unknown",
         "voice_user": "Unknown",
@@ -345,10 +344,10 @@ def access_page():
         if k not in st.session_state:
             st.session_state[k] = v
 
-    # ✅ CREATE COLUMNS
+    # ---------- COLUMNS ----------
     col1, col2 = st.columns(2)
 
-    # ---------------- FACE AUTH ----------------
+    # ---------- FACE AUTH ----------
     with col1:
         st.subheader("👤 Face Authentication")
         img = st.camera_input("Capture Face")
@@ -366,7 +365,7 @@ def access_page():
             st.image(frame, channels="BGR")
             st.success(f"Face: {face_user}")
 
-    # ---------------- VOICE AUTH ----------------
+    # ---------- VOICE AUTH ----------
     with col2:
         st.subheader("🎙 Voice Authentication")
         audio = st.file_uploader("Upload voice (.wav)", type=["wav"])
@@ -377,7 +376,6 @@ def access_page():
             st.session_state.voice_conf = conf
 
             st.success(f"Voice: {voice_user} ({conf:.2f})")
-
 
     # ---------------- FACE AUTH ----------------
     # with col1:
@@ -472,6 +470,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
