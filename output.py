@@ -348,41 +348,56 @@ def about_page():
 
 #     col1, col2 = st.columns(2)
 
-    # ---------------- FACE AUTH ----------------
-    # with col1:
-    #     st.subheader("👤 Face Authentication")
-    #     if st.button("📸 Capture Face"):
-    #         face_user, frame = recognize_face()
-    #         st.session_state.face_user = face_user
-    #         if frame is not None:
-    #             st.image(frame, channels="BGR")
-    #         st.info(f"Face: {face_user}")
+#     # ---------------- FACE AUTH ----------------
+#     with col1:
+#         st.subheader("👤 Face Authentication")
+#         if st.button("📸 Capture Face"):
+#             face_user, frame = recognize_face()
+#             st.session_state.face_user = face_user
+#             if frame is not None:
+#                 st.image(frame, channels="BGR")
+#             st.info(f"Face: {face_user}")
 
 
 
-    # ---------------- VOICE AUTH ----------------
-    # with col2:
-    #     st.subheader("🎙 Voice Authentication")
-    #     if st.button("🎧 Record Voice"):
-    #         voice_user, conf = recognize_voice()
-    #         st.session_state.voice_user = voice_user
-    #         st.session_state.voice_conf = conf
-    #         st.info(f"Voice: {voice_user} ({conf:.2f})")
+#     # ---------------- VOICE AUTH ----------------
+#     with col2:
+#         st.subheader("🎙 Voice Authentication")
+#         if st.button("🎧 Record Voice"):
+#             voice_user, conf = recognize_voice()
+#             st.session_state.voice_user = voice_user
+#             st.session_state.voice_conf = conf
+#             st.info(f"Voice: {voice_user} ({conf:.2f})")
+
 
 from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
 
-
 # ---------------- FACE RECOGNITION ----------------
-def recognize_face_from_file(file_path, known_encodings, known_names):
-    image = face_recognition.load_image_file(file_path)
-    encodings = face_recognition.face_encodings(image)
-    if len(encodings) > 0:
-        face_encoding = encodings[0]
-        matches = face_recognition.compare_faces(known_encodings, face_encoding)
-        if True in matches:
-            match_index = matches.index(True)
-            return known_names[match_index]
-    return "Unknown"
+def recognize_face():
+    """
+    Capture face using st.camera_input (browser webcam).
+    Returns (recognized_name, frame_image)
+    """
+    img = st.camera_input("📸 Capture Face")
+    if img is not None:
+        # Save captured image
+        with open("captured_face.png", "wb") as f:
+            f.write(img.getbuffer())
+
+        # Run recognition on saved image
+        image = face_recognition.load_image_file("captured_face.png")
+        encodings = face_recognition.face_encodings(image)
+
+        if len(encodings) > 0:
+            face_encoding = encodings[0]
+            # 👉 Replace with your known encodings/names
+            matches = face_recognition.compare_faces(known_encodings, face_encoding)
+            if True in matches:
+                match_index = matches.index(True)
+                return known_names[match_index], img
+        return "Unknown", img
+    return "Unknown", None
+
 
 # ---------------- AUDIO PROCESSOR ----------------
 class AudioProcessor(AudioProcessorBase):
@@ -390,11 +405,29 @@ class AudioProcessor(AudioProcessorBase):
         self.frames = []
 
     def recv_audio(self, frame):
-        # Collect audio frames here
         self.frames.append(frame.to_ndarray())
         return frame
 
-def access_page(known_encodings, known_names):
+
+def recognize_voice():
+    """
+    Capture live audio using streamlit-webrtc.
+    Returns (recognized_name, confidence)
+    """
+    ctx = webrtc_streamer(
+        key="voice",
+        mode="sendonly",
+        audio_receiver_size=256,
+        audio_processor_factory=AudioProcessor,
+    )
+
+    # 👉 TODO: process ctx.audio_processor.frames into your voice recognition model
+    # Placeholder result:
+    return "RecognizedVoiceName", 0.92
+
+
+# ---------------- ACCESS PAGE ----------------
+def access_page():
     st.markdown("## 🔓 Access Control Panel")
 
     # ---------------- INITIALIZE SESSION STATE ----------------
@@ -402,7 +435,7 @@ def access_page(known_encodings, known_names):
         "face_user": "Unknown",
         "voice_user": "Unknown",
         "voice_conf": 0.0,
-        "access_log": []
+        "access_log": []   # 👈 stores people + time
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -413,28 +446,27 @@ def access_page(known_encodings, known_names):
     # ---------------- FACE AUTH ----------------
     with col1:
         st.subheader("👤 Face Authentication")
-        img = st.camera_input("📸 Capture Face")
-        if img is not None:
-            with open("captured_face.png", "wb") as f:
-                f.write(img.getbuffer())
-            person_name = recognize_face_from_file("captured_face.png", known_encodings, known_names)
-            st.session_state.face_user = person_name
-            st.info(f"Face recognized: {person_name}")
+        if st.button("📸 Capture Face"):
+            face_user, frame = recognize_face()
+            st.session_state.face_user = face_user
+            if frame is not None:
+                st.image(frame)
+            st.info(f"Face: {face_user}")
 
     # ---------------- VOICE AUTH ----------------
     with col2:
-        st.subheader("🎙 Voice Authentication (Live)")
-        webrtc_streamer(
-            key="voice",
-            mode="sendonly",
-            audio_receiver_size=256,
-            audio_processor_factory=AudioProcessor
-        )
-        # 👉 After capturing, feed audio frames into your voice recognition model
-        # Example placeholder:
-        st.session_state.voice_user = "RecognizedVoiceName"
-        st.session_state.voice_conf = 0.92
-        st.info(f"Voice recognized: {st.session_state.voice_user} ({st.session_state.voice_conf:.2f})")
+        st.subheader("🎙 Voice Authentication")
+        if st.button("🎧 Record Voice"):
+            voice_user, conf = recognize_voice()
+            st.session_state.voice_user = voice_user
+            st.session_state.voice_conf = conf
+            st.info(f"Voice: {voice_user} ({conf:.2f})")
+
+
+
+
+
+
 
 
 
@@ -511,6 +543,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
