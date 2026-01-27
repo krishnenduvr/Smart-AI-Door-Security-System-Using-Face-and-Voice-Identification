@@ -329,84 +329,74 @@ def about_page():
     - Real-time decision making
     - Modern UI dashboard
     """)
-
 # ---------------- ACCESS PAGE ----------------
 def access_page():
     st.markdown("## 🔓 Access Control Panel")
 
-    # ---------------- INITIALIZE SESSION STATE ----------------
+    # ---------------- SESSION STATE ----------------
     defaults = {
         "face_user": "Unknown",
         "voice_user": "Unknown",
         "voice_conf": 0.0,
-        "access_log": []   # 👈 stores people + time
+        "access_log": []
     }
 
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
 
+    # ✅ CREATE COLUMNS
     col1, col2 = st.columns(2)
 
-    # ---------------- FACE AUTH (CLOUD SAFE) ----------------
-with col1:
-    st.subheader("👤 Face Authentication")
-    img = st.camera_input("Capture Face")
+    # ---------------- FACE AUTH ----------------
+    with col1:
+        st.subheader("👤 Face Authentication")
+        img = st.camera_input("Capture Face")
 
-    if img:
-        bytes_data = img.read()
-        frame = cv2.imdecode(
-            np.frombuffer(bytes_data, np.uint8),
-            cv2.IMREAD_COLOR
-        )
+        if img is not None:
+            bytes_data = img.read()
+            frame = cv2.imdecode(
+                np.frombuffer(bytes_data, np.uint8),
+                cv2.IMREAD_COLOR
+            )
 
-        face_user = recognize_face_from_image(frame)
+            face_user = recognize_face_from_image(frame)
+            st.session_state.face_user = face_user
 
-        st.session_state.face_user = face_user   # ✅ REQUIRED
-        st.image(frame, channels="BGR")
-        st.success(f"Face: {face_user}")
+            st.image(frame, channels="BGR")
+            st.success(f"Face: {face_user}")
 
+    # ---------------- VOICE AUTH ----------------
+    with col2:
+        st.subheader("🎙 Voice Authentication")
+        audio = st.file_uploader("Upload voice (.wav)", type=["wav"])
 
-# ---------------- VOICE AUTH (CLOUD SAFE) ----------------
-with col2:
-    st.subheader("🎙 Voice Authentication")
-    audio = st.file_uploader("Upload voice (.wav)", type=["wav"])
+        if audio is not None:
+            voice_user, conf = recognize_voice_from_file(audio)
+            st.session_state.voice_user = voice_user
+            st.session_state.voice_conf = conf
 
-    if audio:
-        voice_user, conf = recognize_voice_from_file(audio)
-
-        st.session_state.voice_user = voice_user  # ✅ REQUIRED
-        st.session_state.voice_conf = conf        # ✅ REQUIRED
-
-        st.success(f"Voice: {voice_user} ({conf:.2f})")
+            st.success(f"Voice: {voice_user} ({conf:.2f})")
 
 
-#     # ---------------- FACE AUTH ----------------
-#     with col1:
-#         st.subheader("👤 Face Authentication")
-#         if st.button("📸 Capture Face"):
-#             face_user, frame = recognize_face()
-#             st.session_state.face_user = face_user
-#             if frame is not None:
-#                 st.image(frame, channels="BGR")
-#             st.info(f"Face: {face_user}")
+    # ---------------- FACE AUTH ----------------
+    # with col1:
+    #     st.subheader("👤 Face Authentication")
+    #     if st.button("📸 Capture Face"):
+    #         face_user, frame = recognize_face()
+    #         st.session_state.face_user = face_user
+    #         if frame is not None:
+    #             st.image(frame, channels="BGR")
+    #         st.info(f"Face: {face_user}")
 
-
-
-
-#     # ---------------- VOICE AUTH ----------------
-#     with col2:
-#         st.subheader("🎙 Voice Authentication")
-#         if st.button("🎧 Record Voice"):
-#             voice_user, conf = recognize_voice()
-#             st.session_state.voice_user = voice_user
-#             st.session_state.voice_conf = conf
-#             st.info(f"Voice: {voice_user} ({conf:.2f})")
-      
-      
-    
-
-
+    # # ---------------- VOICE AUTH ----------------
+    # with col2:
+    #     st.subheader("🎙 Voice Authentication")
+    #     if st.button("🎧 Record Voice"):
+    #         voice_user, conf = recognize_voice()
+    #         st.session_state.voice_user = voice_user
+    #         st.session_state.voice_conf = conf
+    #         st.info(f"Voice: {voice_user} ({conf:.2f})")
 
     
     # ---------------- PIN ----------------
@@ -482,6 +472,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
