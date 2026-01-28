@@ -122,6 +122,7 @@ face_db = load_face_db()
 #     return best_match if best_score >= FACE_THRESHOLD else "Unknown", frame
 
 
+
 from PIL import Image
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -129,7 +130,8 @@ def recognize_face():
     # Browser webcam snapshot
     img_file = st.camera_input("📷 Capture your face")
     if img_file is None:
-        return "Unknown", None
+        # No image yet → don't show "Unknown"
+        return None, None  
 
     # Convert to OpenCV frame
     bytes_data = img_file.getvalue()
@@ -137,7 +139,7 @@ def recognize_face():
     frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
     if frame is None:
-        return "Unknown", None
+        return None, None
 
     # Convert to RGB for MTCNN
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -148,9 +150,9 @@ def recognize_face():
     if face_tensor is None:
         return "Unknown", frame
 
-    # Ensure tensor is normalized and has batch dimension
-    face_tensor = face_tensor.unsqueeze(0)  # add batch dimension
-    emb = facenet(face_tensor).detach().cpu().numpy()
+    # Ensure tensor has batch dimension and flatten embedding
+    face_tensor = face_tensor.unsqueeze(0)
+    emb = facenet(face_tensor).detach().cpu().numpy().reshape(1, -1)
 
     # Compare with database
     best_match, best_score = "Unknown", 0
@@ -159,7 +161,9 @@ def recognize_face():
         if score > best_score:
             best_score, best_match = score, name
 
-    return best_match if best_score >= FACE_THRESHOLD else "Unknown", frame
+    return (best_match if best_score >= FACE_THRESHOLD else "Unknown"), frame
+
+
 # ---------------- VOICE RECOGNITION ----------------
 def recognize_voice():
     audio = sd.rec(
@@ -479,6 +483,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
