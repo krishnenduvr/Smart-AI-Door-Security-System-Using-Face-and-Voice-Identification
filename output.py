@@ -131,29 +131,21 @@ def recognize_face():
     bytes_data = img_file.getvalue()
     np_arr = np.frombuffer(bytes_data, np.uint8)
     frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-    from PIL import Image
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    pil_img = Image.fromarray(rgb)   # convert to PIL image
 
-   # Detect face with MTCNN
-    face = mtcnn(pil_img)
-    if face is None:
+    # Convert to RGB for MTCNN
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    # Detect face with MTCNN
+    # IMPORTANT: mtcnn expects a PIL image or tensor, but returns a cropped face tensor
+    from PIL import Image
+    pil_img = Image.fromarray(rgb)
+    face_tensor = mtcnn(pil_img)
+
+    if face_tensor is None:
         return "Unknown", frame
 
-
-
-    # Convert to RGB tensor for MTCNN
-    # rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    # # rgb_tensor = torch.tensor(rgb).permute(2, 0, 1).float() / 255.0
-
-    # # Detect face
-    # face = mtcnn(rgb)
-    # if face is None:
-    #     return "Unknown", frame
-    
-
     # Generate embedding
-    emb = facenet(face.unsqueeze(0)).detach().numpy()
+    emb = facenet(face_tensor.unsqueeze(0)).detach().numpy()
 
     # Compare with database
     best_match, best_score = "Unknown", 0
@@ -483,6 +475,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
