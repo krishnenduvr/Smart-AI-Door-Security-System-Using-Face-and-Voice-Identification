@@ -395,7 +395,7 @@ def access_page():
     col1, col2 = st.columns(2)
 
     # ---------------- FACE AUTH ----------------
-    with col1:
+   with col1:
     st.subheader("👤 Face Authentication")
     if st.button("📸 Capture Face"):
         face_user, frame = recognize_face()
@@ -490,6 +490,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
