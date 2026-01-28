@@ -78,13 +78,18 @@ def load_face_db():
             if not img.lower().endswith((".jpg", ".png")):
                 continue
 
-            image = cv2.imread(os.path.join(person_path, img))
-            rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            face = mtcnn(rgb)
+            img_path = os.path.join(person_path, img)
+            pil_img = Image.open(img_path).convert("RGB")
 
-            if face is not None:
-                emb = facenet(face.unsqueeze(0)).detach().numpy()[0]
-                embeddings.append(emb)
+            # Preprocess cropped face directly (skip MTCNN here)
+            face_tensor = torch.tensor(np.array(pil_img)).permute(2,0,1).float() / 255.0
+            face_tensor = torch.nn.functional.interpolate(face_tensor.unsqueeze(0), size=(160,160))
+
+            with torch.no_grad():
+                emb = facenet(face_tensor).cpu().numpy()[0]
+            embeddings.append(emb)
+
+
 
         if embeddings:
             db[person] = np.mean(embeddings, axis=0)
@@ -123,15 +128,11 @@ face_db = load_face_db()
 
 
 
-from PIL import Image
-from sklearn.metrics.pairwise import cosine_similarity
-
 def recognize_face():
     # Browser webcam snapshot
     img_file = st.camera_input("📷 Capture your face")
     if img_file is None:
-        # No image yet → don't show "Unknown"
-        return None, None  
+        return None, None   # don't show "Unknown" before capture
 
     # Convert to OpenCV frame
     bytes_data = img_file.getvalue()
@@ -149,10 +150,10 @@ def recognize_face():
     face_tensor = mtcnn(pil_img)
     if face_tensor is None:
         return "Unknown", frame
-
-    # Ensure tensor has batch dimension and flatten embedding
+    # Embedding
     face_tensor = face_tensor.unsqueeze(0)
-    emb = facenet(face_tensor).detach().cpu().numpy().reshape(1, -1)
+    with torch.no_grad():
+        emb = facenet(face_tensor).cpu().numpy().reshape(1, -1)
 
     # Compare with database
     best_match, best_score = "Unknown", 0
@@ -162,6 +163,8 @@ def recognize_face():
             best_score, best_match = score, name
 
     return (best_match if best_score >= FACE_THRESHOLD else "Unknown"), frame
+
+
 
 
 # ---------------- VOICE RECOGNITION ----------------
@@ -399,7 +402,9 @@ def access_page():
             st.session_state.face_user = face_user
             if frame is not None:
                 st.image(frame, channels="BGR")
-            st.info(f"Face: {face_user}")
+             if face_user is not None:
+                 st.info(f"Face: {face_user}")
+            
 
     # ---------------- VOICE AUTH ----------------
     with col2:
@@ -483,6 +488,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
