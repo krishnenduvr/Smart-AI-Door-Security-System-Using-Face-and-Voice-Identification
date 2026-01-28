@@ -396,14 +396,16 @@ def access_page():
 
     # ---------------- FACE AUTH ----------------
     with col1:
-        st.subheader("👤 Face Authentication")
-        if st.button("📸 Capture Face"):
-            face_user, frame = recognize_face()
-            st.session_state.face_user = face_user
-            if frame is not None:
-                st.image(frame, channels="BGR")
-             if face_user is not None:
-                 st.info(f"Face: {face_user}")
+    st.subheader("👤 Face Authentication")
+    if st.button("📸 Capture Face"):
+        face_user, frame = recognize_face()
+        st.session_state.face_user = face_user
+
+        if frame is not None:
+            st.image(frame, channels="BGR")
+
+        if face_user is not None:
+            st.info(f"Face: {face_user}")
             
 
     # ---------------- VOICE AUTH ----------------
@@ -488,6 +490,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
