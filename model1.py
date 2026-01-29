@@ -127,9 +127,7 @@ AUTOTUNE = tf.data.AUTOTUNE
 train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
 val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
-# -------------------------------
-# Fine-tuning setup
-# -------------------------------
+
 
 # 1. Load pre-trained backbone
 model = tf.keras.models.load_model("final_cnn_model1.h5")
@@ -161,9 +159,7 @@ history = model.fit(
     batch_size=32,
     callbacks=[checkpoint, lr_plateau])
 
-# -------------------------------
-# Fine-tune deeper layers
-# -------------------------------
+-
 
 # 7. Unfreeze some layers of base model
 base_model.trainable = True
@@ -231,4 +227,5 @@ while True:
         break
 
 cap.release()
+
 cv2.destroyAllWindows()
