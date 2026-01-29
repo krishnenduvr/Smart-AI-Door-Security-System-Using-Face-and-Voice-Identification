@@ -78,18 +78,13 @@ def load_face_db():
             if not img.lower().endswith((".jpg", ".png")):
                 continue
 
-            img_path = os.path.join(person_path, img)
-            pil_img = Image.open(img_path).convert("RGB")
+            image = cv2.imread(os.path.join(person_path, img))
+            rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            face = mtcnn(rgb)
 
-            # Preprocess cropped face directly (skip MTCNN here)
-            face_tensor = torch.tensor(np.array(pil_img)).permute(2,0,1).float() / 255.0
-            face_tensor = torch.nn.functional.interpolate(face_tensor.unsqueeze(0), size=(160,160))
-
-            with torch.no_grad():
-                emb = facenet(face_tensor).cpu().numpy()[0]
-            embeddings.append(emb)
-
-
+            if face is not None:
+                emb = facenet(face.unsqueeze(0)).detach().numpy()[0]
+                embeddings.append(emb)
 
         if embeddings:
             db[person] = np.mean(embeddings, axis=0)
@@ -99,73 +94,32 @@ def load_face_db():
 face_db = load_face_db()
 
 # ---------------- FACE RECOGNITION ----------------
-# def recognize_face():
-#     cam = cv2.VideoCapture(0)
-#     if not cam.isOpened():
-#         return "Unknown", None
-
-#     ret, frame = cam.read()
-#     cam.release()
-
-#     if not ret or frame is None:
-#         return "Unknown", None
-
-#     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#     face = mtcnn(rgb)
-
-#     if face is None:
-#         return "Unknown", frame
-
-#     emb = facenet(face.unsqueeze(0)).detach().numpy()
-
-#     best_match, best_score = "Unknown", 0
-#     for name, db_emb in face_db.items():
-#         score = cosine_similarity(emb, db_emb.reshape(1, -1))[0][0]
-#         if score > best_score:
-#             best_score, best_match = score, name
-
-#     return best_match if best_score >= FACE_THRESHOLD else "Unknown", frame
-
-
-
 def recognize_face():
-    # Browser webcam snapshot
-    img_file = st.camera_input("📷 Capture your face")
-    if img_file is None:
-        return None, None   # don't show "Unknown" before capture
+    cam = cv2.VideoCapture(0)
+    if not cam.isOpened():
+        return "Unknown", None
 
-    # Convert to OpenCV frame
-    bytes_data = img_file.getvalue()
-    np_arr = np.frombuffer(bytes_data, np.uint8)
-    frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    ret, frame = cam.read()
+    cam.release()
 
-    if frame is None:
-        return None, None
+    if not ret or frame is None:
+        return "Unknown", None
 
-    # Convert to RGB for MTCNN
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    pil_img = Image.fromarray(rgb)
+    face = mtcnn(rgb)
 
-    # Detect face with MTCNN
-    face_tensor = mtcnn(pil_img)
-    if face_tensor is None:
+    if face is None:
         return "Unknown", frame
-    # Embedding
-    face_tensor = face_tensor.unsqueeze(0)
-    with torch.no_grad():
-        emb = facenet(face_tensor).cpu().numpy().reshape(1, -1)
 
-    # Compare with database
+    emb = facenet(face.unsqueeze(0)).detach().numpy()
+
     best_match, best_score = "Unknown", 0
     for name, db_emb in face_db.items():
         score = cosine_similarity(emb, db_emb.reshape(1, -1))[0][0]
         if score > best_score:
             best_score, best_match = score, name
 
-    return (best_match if best_score >= FACE_THRESHOLD else "Unknown"), frame
-
-
-
+    return best_match if best_score >= FACE_THRESHOLD else "Unknown", frame
 
 # ---------------- VOICE RECOGNITION ----------------
 def recognize_voice():
@@ -400,14 +354,9 @@ def access_page():
         if st.button("📸 Capture Face"):
             face_user, frame = recognize_face()
             st.session_state.face_user = face_user
-
             if frame is not None:
                 st.image(frame, channels="BGR")
-
-            if face_user is not None:
-                st.info(f"Face: {face_user}")
-
-            
+            st.info(f"Face: {face_user}")
 
     # ---------------- VOICE AUTH ----------------
     with col2:
@@ -491,6 +440,7 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
