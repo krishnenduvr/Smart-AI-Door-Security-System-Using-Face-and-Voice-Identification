@@ -12,17 +12,30 @@ from datetime import datetime
 import time
 import tempfile
 from gtts import gTTS   
-
+import requests, zipfile, io, os
 
 st.set_page_config(
     page_title="Smart AI Door Security",
     page_icon="🔐",
     layout="wide"
 )
+
+FACE_DB = "cropped_captured"
+def download_face_db(url):
+    os.makedirs(FACE_DB, exist_ok=True)
+    r = requests.get(url)
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(FACE_DB)
+download_face_db("https://drive.google.com/uc?id=1eehbJs4Z4xAc0PPRV3ANlUQz_KMuoAPG&export=download")
 # ---------------- PATHS ----------------
-FACE_DB = r"D:\Security System\cropped_captured"
-VOICE_MODEL_PATH = r"D:\Security System\voice_model.pkl"
-VOICE_LABEL_PATH = r"D:\Security System\voice_labels.pkl"
+# FACE_DB = r"D:\Security System\cropped_captured"
+VOICE_MODEL_PATH = "voice_model.pkl"
+VOICE_LABEL_PATH = "voice_labels.pkl"
+
+# VOICE_MODEL_PATH = r"D:\Security System\voice_model.pkl"
+# VOICE_LABEL_PATH = r"D:\Security System\voice_labels.pkl"
+
+
 
 TEMP_AUDIO = "temp_voice.wav"
 
@@ -420,3 +433,4 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
+
