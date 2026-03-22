@@ -1,14 +1,10 @@
-streamlit
-numpy
-librosa
-sounddevice
-scipy
-facenet-pytorch
-scikit-learn
-gtts
-opencv-python-headless   # safer for cloud
-torch
-torchvision
-tensorflow
-streamlit-webrtc
-
+streamlit==1.53.1
+numpy==1.23.5
+scipy==1.15.3
+scikit-learn==1.7.2
+librosa==0.11.0
+opencv-python-headless==4.9.0.80
+torch==2.0.1
+torchvision==0.15.2
+facenet-pytorch==2.5.2
+gTTS==2.5.4
