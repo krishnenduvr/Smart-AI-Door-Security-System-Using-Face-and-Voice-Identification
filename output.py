@@ -4,15 +4,12 @@ import os
 import numpy as np
 import pickle
 import librosa
-import sounddevice as sd
-from scipy.io.wavfile import write
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from sklearn.metrics.pairwise import cosine_similarity
 from datetime import datetime
-import time
 import tempfile
 from gtts import gTTS   
-import requests, zipfile, io, os
+import requests, zipfile, io
 
 st.set_page_config(
     page_title="Smart AI Door Security",
@@ -30,11 +27,10 @@ download_face_db("https://drive.google.com/uc?id=1eehbJs4Z4xAc0PPRV3ANlUQz_KMuoA
 
 
 # ---------------- PATHS ----------------
-VOICE_MODEL_PATH = r"D:\Security System\voice_model.pkl"
-VOICE_LABEL_PATH = r"D:\Security System\voice_labels.pkl"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VOICE_MODEL_PATH = os.path.join(BASE_DIR, "voice_model.pkl")
+VOICE_LABEL_PATH = os.path.join(BASE_DIR, "voice_labels.pkl")
 
-TEMP_AUDIO = "temp_voice.wav"
-VOICE_DURATION = 4
 VOICE_FS = 22050
 VOICE_THRESHOLD = 0.7
 FACE_THRESHOLD = 0.7
@@ -82,15 +78,8 @@ def load_face_db():
 face_db = load_face_db()
 
 # ---------------- FACE RECOGNITION ----------------
-def recognize_face():
-    cam = cv2.VideoCapture(0)
-    if not cam.isOpened():
-        return "Unknown", None
-
-    ret, frame = cam.read()
-    cam.release()
-
-    if not ret or frame is None:
+def recognize_face(frame):
+    if frame is None:
         return "Unknown", None
 
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -109,24 +98,37 @@ def recognize_face():
 
     return best_match if best_score >= FACE_THRESHOLD else "Unknown", frame
 
-# ---------------- VOICE RECOGNITION ----------------
-def recognize_voice():
-    audio = sd.rec(
-        int(VOICE_DURATION * VOICE_FS),
-        samplerate=VOICE_FS,
-        channels=1,
-        dtype="int16"
-    )
-    sd.wait()
-    write(TEMP_AUDIO, VOICE_FS, audio)
 
-    y, sr = librosa.load(TEMP_AUDIO, sr=VOICE_FS)
+def load_camera_frame(camera_file):
+    if camera_file is None:
+        return None
+
+    file_bytes = np.asarray(bytearray(camera_file.read()), dtype=np.uint8)
+    if file_bytes.size == 0:
+        return None
+    return cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+# ---------------- VOICE RECOGNITION ----------------
+def recognize_voice(audio_file):
+    if audio_file is None:
+        return "Unknown", 0.0
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_audio:
+        tmp_audio.write(audio_file.read())
+        temp_audio_path = tmp_audio.name
+
+    y, sr = librosa.load(temp_audio_path, sr=VOICE_FS)
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=40)
     mfcc = np.mean(mfcc.T, axis=0).reshape(1, -1)
 
     probs = voice_model.predict_proba(mfcc)[0]
     confidence = np.max(probs)
     label = encoder.inverse_transform([np.argmax(probs)])[0]
+
+    try:
+        os.remove(temp_audio_path)
+    except OSError:
+        pass
 
     return label if confidence >= VOICE_THRESHOLD else "Unknown", confidence
 
@@ -252,10 +254,10 @@ st.markdown("""
 <div class="navbar">
     <h2>🔐 Smart AI Door Security</h2>
     <div class="nav-links">
-        <a href="?page=home">Home</a>
-        <a href="?page=about">About</a>
-        <a href="?page=access">Access</a>
-        <a href="?page=contact">Contact</a>
+        <a href="./?page=home" target="_self">Home</a>
+        <a href="./?page=about" target="_self">About</a>
+        <a href="./?page=access" target="_self">Access</a>
+        <a href="./?page=contact" target="_self">Contact</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -320,6 +322,7 @@ def about_page():
 
 # ---------------- ACCESS PAGE ----------------
 def access_page():
+    st.caption("Use your browser camera and microphone to verify identity.")
     st.markdown("## 🔓 Access Control Panel")
 
     # ---------------- INITIALIZE SESSION STATE ----------------
@@ -339,8 +342,10 @@ def access_page():
     # ---------------- FACE AUTH ----------------
     with col1:
         st.subheader("👤 Face Authentication")
-        if st.button("📸 Capture Face"):
-            face_user, frame = recognize_face()
+        camera_file = st.camera_input("Capture Face")
+        if st.button("📸 Verify Face"):
+            frame = load_camera_frame(camera_file)
+            face_user, frame = recognize_face(frame)
             st.session_state.face_user = face_user
             if frame is not None:
                 st.image(frame, channels="BGR")
@@ -349,8 +354,9 @@ def access_page():
     # ---------------- VOICE AUTH ----------------
     with col2:
         st.subheader("🎙 Voice Authentication")
-        if st.button("🎧 Record Voice"):
-            voice_user, conf = recognize_voice()
+        audio_file = st.audio_input("Record Voice")
+        if st.button("🎧 Verify Voice"):
+            voice_user, conf = recognize_voice(audio_file)
             st.session_state.voice_user = voice_user
             st.session_state.voice_conf = conf
             st.info(f"Voice: {voice_user} ({conf:.2f})")
@@ -428,5 +434,4 @@ st.markdown("""
     © 2026 Smart AI Door Security System | All Rights Reserved
 </div>
 """, unsafe_allow_html=True)
-
 
